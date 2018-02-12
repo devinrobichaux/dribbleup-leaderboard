@@ -3,7 +3,8 @@ import { StyleSheet, View, Image, ScrollView } from 'react-native';
 import { List, ListItem, ButtonGroup, Text } from 'react-native-elements';
 import axios from 'axios';
 import _ from 'lodash';
-
+import { Font } from 'expo';
+import { styles } from './Styles.js';
 
 
 export default class App extends React.Component {
@@ -11,70 +12,76 @@ export default class App extends React.Component {
   state = {
     data: [],
     filter: 0,
+    fontLoaded: false
   }
-  
+
   componentWillMount() {
     axios.get('http://dusoccer.dribbleup.com/sampleAPI/')
       .then((res) => {
-        // console.log(res.data.leaderboard);
         this.setState({ data: res.data.leaderboard });
       })
   }
 
+  async componentDidMount() {
+    await Font.loadAsync({
+      'rubik-black-italic': require('./assets/fonts/Rubik-BlackItalic.ttf'),
+      'rubik-medium': require('./assets/fonts/Rubik-Medium.ttf')
+    });
+    this.setState({ fontLoaded: true });
+  }
+
   renderHeader() {
     return (
-        <View colors={[, '#1da2c6', '#1695b7']}
-            style={{ backgroundColor: '#119abf', padding: 15, paddingTop: 35, alignItems: 'center' }}>
-            <Text style={{ fontSize: 25, color: 'white', }}>AllStars</Text>
-            <View style={{
-                flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-                marginBottom: 15, marginTop: 20
-            }}>
-            </View>
-            <ButtonGroup
-                onPress={(x) => { console.log(x) }}
-                selectedIndex={this.state.filter}
-                buttons={['This Week', 'All Time']}
-                containerStyle={{ height: 30 }} />
-        </View>
+      <View
+        style={styles.header}>
+        {
+          this.state.fontLoaded ? (
+            <Text h1 style={{ fontSize: 42, fontFamily: 'rubik-black-italic', color: 'white' }}>
+              Leaderboard
+                </Text>
+          ) : null
+        }
+        <ButtonGroup
+          onPress={(x) => { this.setState({ filter: x }) }}
+          selectedIndex={this.state.filter}
+          buttons={['All Time', 'This Week']}
+          containerStyle={{ height: 30 }}
+
+        />
+      </View>
     )
-}
+  }
 
   render() {
+
+    const sortedData = this.state.filter > 0 ?
+      _.orderBy(this.state.data, ['value'], ['desc']) :
+      _.orderBy(this.state.data, ['userXP'], ['desc']) 
+
     return (
-      <View style={{ flex: 1, backgroundColor: 'white'}}>
-      {this.renderHeader()}
+      <View style={{ flex: 1 }}>
+        {this.renderHeader()}
         <ScrollView>
-          <List containerStyle={{marginBottom: 20}}>
-            {
-              this.state.data.map((user, i) => (
-                <ListItem
-                  key={i}
-                  title={user.username}
-                  rightIcon={
-                      <Image source={require('./assets/DUcoin.png')} style={styles.ratingImage}/>
-                  }
-                />
-              ))
-            }
-          </List>
+          {
+            sortedData.map((user, i) => (
+              <ListItem
+                key={i}
+                title={`${i + 1}: ${user.username}`}
+                titleStyle={styles.listTitle}
+                containerStyle={{ backgroundColor: (i === 0 ? 'gold' : i % 2 === 1 ? '#ECEEEC' : '#F7F7F7') }}
+                rightIcon={
+                  <Image source={require('./assets/images/DUcoin.png')} style={styles.coin} />
+                }
+                rightTitle={
+                  this.state.filter === 0 ? `Total XP: ${user.userXP}` : `Weekly XP: ${user.value}`
+                }
+                rightTitleStyle={styles.listXP}
+              />
+            ))
+          }
         </ScrollView>
       </View>
     );
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-  },
-  ratingImage: {
-    alignSelf: 'flex-end'
-  },
-  ratingText: {
-    paddingLeft: 10,
-    color: 'grey'
-  }
-});

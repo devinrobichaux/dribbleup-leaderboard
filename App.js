@@ -6,7 +6,6 @@ import _ from 'lodash';
 import { Font } from 'expo';
 import { styles } from './Styles.js';
 
-
 export default class App extends React.Component {
 
   state = {
@@ -19,6 +18,9 @@ export default class App extends React.Component {
     axios.get('http://dusoccer.dribbleup.com/sampleAPI/')
       .then((res) => {
         this.setState({ data: res.data.leaderboard });
+      })
+      .catch((err) => {
+        if (err) throw err;
       })
   }
 
@@ -36,9 +38,9 @@ export default class App extends React.Component {
         style={styles.header}>
         {
           this.state.fontLoaded ? (
-            <Text h1 style={{ fontSize: 42, fontFamily: 'rubik-black-italic', color: 'white' }}>
+            <Text h1 style={styles.leaderboard}>
               Leaderboard
-                </Text>
+            </Text>
           ) : null
         }
         <ButtonGroup
@@ -46,7 +48,6 @@ export default class App extends React.Component {
           selectedIndex={this.state.filter}
           buttons={['All Time', 'This Week']}
           containerStyle={{ height: 30 }}
-
         />
       </View>
     )
@@ -56,7 +57,7 @@ export default class App extends React.Component {
 
     const sortedData = this.state.filter > 0 ?
       _.orderBy(this.state.data, ['value'], ['desc']) :
-      _.orderBy(this.state.data, ['userXP'], ['desc']) 
+      _.orderBy(this.state.data, ['userXP'], ['desc'])
 
     return (
       <View style={{ flex: 1 }}>
